@@ -12,13 +12,6 @@
 
 ![黑暗森林 · 五个博弈](dark-forest/screenshots/og.png)
 
-## 新增游戏
-
-1. 在根目录新建 `<game-name>/`；
-2. 放入 `index.html` 和资源；
-3. 在本页的游戏列表里加一行；
-4. 根 `index.html` 的跳转指向默认游戏。
-
 ---
 
 ## 关于 AI 生成
