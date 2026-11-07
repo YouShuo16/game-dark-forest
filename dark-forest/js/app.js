@@ -187,12 +187,12 @@ const App = {
           <button class="btn btn--primary" type="button" data-act="${started ? "continue" : "start"}">${primaryLabel}</button>
           ${started
             ? `<button class="btn" type="button" data-act="chapters">章节选择</button>
-               <button class="btn btn--ghost" type="button" data-hb-open="theory">手册</button>`
+               <button class="btn btn--ghost" type="button" data-hb-open="theory">手册</button>
+               <button class="btn btn--ghost btn--danger" type="button" data-act="reset">重新开始</button>`
             : `<button class="btn btn--ghost" type="button" data-hb-open="world">新手指南</button>`}
         </div>
         <p class="title-foot">
           改编自刘慈欣《三体》世界观 · 非官方同人 · AI 生成
-          ${started ? `<button class="title-reset" type="button" data-act="reset">重新开始</button>` : ""}
         </p>
       </div>
       <div class="wrap title-version">

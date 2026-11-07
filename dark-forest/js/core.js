@@ -285,6 +285,184 @@ document.addEventListener("keydown", e => {
   if (e.key === "Escape" && SoundPanel.isOpen) SoundPanel.hide();
 });
 
+/* ---------------- settings ---------------- */
+const Settings = {
+  el: null,
+  isOpen: false,
+  prevFocus: null,
+  _armed: false,
+  _timer: 0,
+
+  build() {
+    const el = document.createElement("div");
+    el.className = "settings";
+    el.setAttribute("role", "dialog");
+    el.setAttribute("aria-modal", "true");
+    el.setAttribute("aria-label", "设置");
+    el.innerHTML = `
+      <div class="settings-backdrop" data-set-close></div>
+      <div class="settings-panel" tabindex="-1">
+        <div class="sp-head">
+          <span class="sp-title">设置 / SETTINGS</span>
+          <button class="sp-close" type="button" data-set-close aria-label="关闭设置">×</button>
+        </div>
+        <section class="set-section">
+          <h4>声音</h4>
+          <label class="set-row">
+            <span class="sp-k">音乐</span>
+            <input type="range" min="0" max="100" step="1" data-set-audio="music" aria-label="音乐音量">
+            <b class="sp-v" data-set-v="music">85</b>
+          </label>
+          <label class="set-row">
+            <span class="sp-k">音效</span>
+            <input type="range" min="0" max="100" step="1" data-set-audio="sfx" aria-label="音效音量">
+            <b class="sp-v" data-set-v="sfx">100</b>
+          </label>
+          <button class="sp-mute" type="button" data-set-mute>全部静音</button>
+        </section>
+        <section class="set-section">
+          <h4>游戏</h4>
+          <button class="btn btn--ghost btn--danger" type="button" data-set-title>返回标题</button>
+          <p class="set-note">返回后，当前章节未完成的进度不会保存；已完成的章节与统计不受影响。</p>
+        </section>
+        <section class="set-section">
+          <h4>快捷操作</h4>
+          <p class="set-note">键盘 1–5 选择 · Esc 关闭面板 · 右上角「?」打开手册</p>
+        </section>
+      </div>`;
+    document.body.appendChild(el);
+    this.el = el;
+
+    el.addEventListener("input", e => {
+      const key = e.target.dataset.setAudio;
+      if (!key) return;
+      const v = parseInt(e.target.value, 10) / 100;
+      e.target.style.setProperty("--p", e.target.value + "%");
+      if (key === "music") Sound.setMusic(v);
+      else Sound.setSfx(v);
+      this.sync();
+    });
+
+    el.addEventListener("click", e => {
+      if (e.target.closest("[data-set-close]")) { this.close(); return; }
+      if (e.target.closest("[data-set-mute]")) {
+        Sound.setMuted(!Sound.muted);
+        this.sync();
+        return;
+      }
+      if (e.target.closest("[data-set-title]")) this.armTitle();
+    });
+
+    this._key = e => {
+      if (e.key === "Escape") { this.close(); return; }
+      if (e.key !== "Tab") return;
+      const nodes = Array.from(this.el.querySelectorAll("button, input, [href], [tabindex]:not([tabindex='-1'])"))
+        .filter(n => !n.disabled && n.offsetParent !== null);
+      if (!nodes.length) return;
+      const first = nodes[0], last = nodes[nodes.length - 1];
+      const panel = this.el.querySelector(".settings-panel");
+      if (document.activeElement === panel) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+        return;
+      }
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+  },
+
+  open() {
+    if (this.isOpen) return;
+    if (!this.el) this.build();
+    SoundPanel.hide();
+    this.prevFocus = document.activeElement;
+    this.resetTitle();
+    this.sync();
+    this.el.classList.add("is-open");
+    this.isOpen = true;
+    const app = document.getElementById("app");
+    if (app) app.inert = true;
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", this._key);
+    const panel = this.el.querySelector(".settings-panel");
+    if (panel) panel.focus({ preventScroll: true });
+  },
+
+  close() {
+    if (!this.isOpen || !this.el) return;
+    this.el.classList.remove("is-open");
+    this.isOpen = false;
+    const app = document.getElementById("app");
+    if (app) app.inert = false;
+    document.body.style.overflow = "";
+    document.removeEventListener("keydown", this._key);
+    clearTimeout(this._timer);
+    this._armed = false;
+    this.resetTitle();
+    if (this.prevFocus && this.prevFocus.focus) this.prevFocus.focus({ preventScroll: true });
+  },
+
+  toggle() { this.isOpen ? this.close() : this.open(); },
+
+  sync() {
+    if (!this.el) return;
+    const m = Math.round(Sound.music * 100);
+    const s = Math.round(Sound.sfx * 100);
+    const mi = this.el.querySelector('[data-set-audio="music"]');
+    const si = this.el.querySelector('[data-set-audio="sfx"]');
+    const mv = this.el.querySelector('[data-set-v="music"]');
+    const sv = this.el.querySelector('[data-set-v="sfx"]');
+    if (mi) { mi.value = m; mi.style.setProperty("--p", m + "%"); }
+    if (si) { si.value = s; si.style.setProperty("--p", s + "%"); }
+    if (mv) mv.textContent = m;
+    if (sv) sv.textContent = s;
+    const mb = this.el.querySelector("[data-set-mute]");
+    if (mb) {
+      mb.textContent = Sound.muted ? "取消静音" : "全部静音";
+      mb.classList.toggle("is-muted", Sound.muted);
+    }
+  },
+
+  resetTitle() {
+    const b = this.el && this.el.querySelector("[data-set-title]");
+    if (!b) return;
+    b.textContent = "返回标题";
+    b.classList.remove("is-armed");
+  },
+
+  armTitle() {
+    if (!this.el) return;
+    const b = this.el.querySelector("[data-set-title]");
+    if (!b) return;
+    if (!this._armed) {
+      this._armed = true;
+      b.textContent = "确认返回标题？";
+      b.classList.add("is-armed");
+      this._timer = setTimeout(() => {
+        this._armed = false;
+        this.resetTitle();
+      }, 3200);
+      return;
+    }
+    this._armed = false;
+    clearTimeout(this._timer);
+    this.close();
+    if (typeof App !== "undefined") App.title();
+  }
+};
+
+document.addEventListener("click", e => {
+  if (e.target.closest("[data-settings-open]")) {
+    e.preventDefault();
+    Settings.toggle();
+  }
+});
+
 /* ---------------- starfield ---------------- */
 const Stars = {
   init() {
@@ -397,6 +575,7 @@ const UI = {
         <span class="pip ${idx >= CHAPTERS.length ? "is-done" : ""}"></span>
       </div>
       <div class="hud-right">${concept || ch.concept}</div>
+      <button class="hud-help" type="button" data-settings-open aria-label="设置" title="设置">设</button>
       <button class="hud-help" type="button" data-hb-open="theory" aria-label="打开游戏手册" title="打开游戏手册">?</button>
     </header>`;
   },
