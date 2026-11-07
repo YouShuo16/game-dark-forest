@@ -8,7 +8,7 @@
 ![非商业同人](https://img.shields.io/badge/%E9%9D%9E%E5%95%86%E4%B8%9A%E5%90%8C%E4%BA%BA-%E4%B8%89%E4%BD%93-ff5d5d?style=flat-square)
 ![AI 生成](https://img.shields.io/badge/AI-generated-8b5cf6?style=flat-square)
 
-**[开始游戏 →](https://youshuo16.github.io/Games/dark-forest/)**
+**[开始游戏 →](https://youshuo16.github.io/Games/play/dark-forest/)**
 
 ![标题画面](screenshots/01-title.png)
 
@@ -101,7 +101,7 @@
 - 音效由 Web Audio 振荡器合成；
 - 文本为原创改写，只保留了少量必要的设定名词。
 
-**代码与文档**以 [MIT License](../LICENSE) 发布；**《三体》的世界观、角色与设定**版权归刘慈欣及相关版权方所有，不在 MIT 许可范围内。详见 [NOTICE.md](../NOTICE.md)。
+**代码与文档**以 [MIT License](LICENSE) 发布；**《三体》的世界观、角色与设定**版权归刘慈欣及相关版权方所有，不在 MIT 许可范围内。详见 [NOTICE.md](NOTICE.md)。
 
 ---
 
