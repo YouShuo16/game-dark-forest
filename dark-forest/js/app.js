@@ -113,10 +113,12 @@ const App = {
   set(html) {
     this.clearTimers();
     Toast.hide();
+    if (typeof Hologram !== "undefined") Hologram.stopAll();
     this.root.innerHTML = html;
     window.scrollTo(0, 0);
     UI.animateMeters(this.root);
     $$('.log-scroll', this.root).forEach(el => { el.scrollTop = el.scrollHeight; });
+    if (typeof Hologram !== "undefined") Hologram.mountAll(this.root);
   },
 
   after(fn, ms) {

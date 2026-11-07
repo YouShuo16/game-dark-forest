@@ -21,7 +21,26 @@ const C1 = {
     this.draw();
   },
 
-  draw() { App.set(this.html()); },
+  draw() {
+    if (typeof Hologram !== "undefined") {
+      Hologram.setState("battle", { round: this.st.round, last: this.st.last, phase: this.st.phase });
+    }
+    App.set(this.html());
+  },
+
+  scene3D() {
+    const gone = this.st.round >= 3;
+    return `
+    <div class="scene scene--3d">
+      <span class="scene-tag">${gone ? "RADAR // 目标消失" : "RADAR // 编队航行"}</span>
+      <canvas data-holo="battle" tabindex="0" aria-label="三维战术星图，可拖拽旋转，滚轮缩放"></canvas>
+      <span class="holo-hint">拖拽旋转 · 滚轮缩放</span>
+      <div class="scene-caption">
+        <span>蓝色空间号 · <b>舰长视角</b></span>
+        <span>距离下一个恒星系 4.2 ly</span>
+      </div>
+    </div>`;
+  },
 
   html() {
     if (this.phase === "brief") {
@@ -47,16 +66,13 @@ const C1 = {
 
     const st = this.st;
     const intel = C1_INTEL[st.round - 1];
-    const contacts = st.round >= 3
-      ? ["蓝色空间号", "终极规律号", "企业号", "自然选择号"]
-      : ["蓝色空间号", "终极规律号", "企业号", "深空号", "自然选择号"];
 
     return `
     <div class="screen fade">
       ${UI.hud(0, "囚徒困境")}
       <div class="stage">
         <section class="stage-main">
-          ${UI.sceneRadar({ you: 0, contacts, tag: st.round >= 3 ? "RADAR // 目标消失" : "RADAR // 编队航行" })}
+          ${this.scene3D()}
           <div class="panel">
             <div class="panel-head">
               <span class="panel-kicker">通信记录 / COMMS</span>
@@ -1335,7 +1351,17 @@ const C4 = {
     this.draw();
   },
 
-  draw() { App.set(this.html()); },
+  draw() {
+    if (typeof Hologram !== "undefined") {
+      const last = this.st.last;
+      Hologram.setState("plans", {
+        prediction: this.prediction(),
+        last: last ? { ...last, counter: C4_COUNTERS[last.them] } : null,
+        round: this.st.round
+      });
+    }
+    App.set(this.html());
+  },
 
   prediction() {
     const w = this.st.weights;
@@ -1374,7 +1400,7 @@ const C4 = {
       ${UI.hud(3, "混合策略")}
       <div class="stage">
         <section class="stage-main">
-          ${this.scene(p)}
+          ${this.scene()}
           <div class="panel">
             <div class="panel-head">
               <span class="panel-kicker">面壁者日志 / LOG</span>
@@ -1417,34 +1443,13 @@ const C4 = {
     </div>`;
   },
 
-  scene(p) {
+  scene() {
     const st = this.st;
     return `
-    <div class="scene">
+    <div class="scene scene--3d">
       <span class="scene-tag ${st.score >= 0 ? "is-calm" : ""}">WALLFACER // 计划 ${st.round}/5</span>
-      <svg viewBox="0 0 400 300" role="img" aria-label="面壁者的计划">
-        <defs>
-          <linearGradient id="beam4" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stop-color="rgba(167,139,250,0)"/>
-            <stop offset="100%" stop-color="rgba(167,139,250,.35)"/>
-          </linearGradient>
-        </defs>
-        <circle cx="200" cy="150" r="104" fill="none" stroke="rgba(167,139,250,.14)" stroke-width=".8" stroke-dasharray="2 6"/>
-        <circle cx="200" cy="150" r="72" fill="none" stroke="rgba(167,139,250,.10)" stroke-width=".8"/>
-        ${C4_PLANS.map((pl, i) => {
-          const a = -Math.PI / 2 + i * (Math.PI * 2 / 3);
-          const x = 200 + Math.cos(a) * 92;
-          const y = 150 + Math.sin(a) * 92;
-          return `<g opacity="${0.45 + p[i] * 1.6}">
-            <line x1="200" y1="150" x2="${x}" y2="${y}" stroke="url(#beam4)" stroke-width="${0.6 + p[i] * 6}"/>
-            <circle cx="${x}" cy="${y}" r="${4 + p[i] * 11}" fill="rgba(167,139,250,.18)" stroke="rgba(167,139,250,.6)" stroke-width=".9"/>
-            <text x="${x}" y="${y + 26}" text-anchor="middle" font-family="monospace" font-size="7.5" letter-spacing="1" fill="rgba(190,175,240,.8)">${pl.name}</text>
-          </g>`;
-        }).join("")}
-        <circle cx="200" cy="150" r="9" fill="rgba(233,241,250,.9)"/>
-        <circle cx="200" cy="150" r="22" fill="none" stroke="rgba(233,241,250,.25)" stroke-width=".8"/>
-        <text x="200" y="132" text-anchor="middle" font-family="monospace" font-size="7" letter-spacing="2" fill="rgba(190,175,240,.7)">破壁人</text>
-      </svg>
+      <canvas data-holo="plans" tabindex="0" aria-label="三维计划星图，可拖拽旋转，滚轮缩放"></canvas>
+      <span class="holo-hint">拖拽旋转 · 滚轮缩放</span>
       <div class="scene-caption"><span>联合国 · 面壁计划听证会</span><span>破壁人在看着你</span></div>
     </div>`;
   },
@@ -2053,7 +2058,12 @@ const C5 = {
     this.draw();
   },
 
-  draw() { App.set(this.html()); },
+  draw() {
+    if (typeof Hologram !== "undefined") {
+      Hologram.setState("mass", { cum: this.st.cum, threshold: C5_THRESHOLD, last: this.st.last });
+    }
+    App.set(this.html());
+  },
 
   moves() {
     const st = this.st;
@@ -2135,56 +2145,12 @@ const C5 = {
 
   scene() {
     const st = this.st;
-    const R = 92;
-    const C = 2 * Math.PI * R;
     const pct = clamp(st.cum / C5_THRESHOLD, 0, 1);
-    const markers = [
-      { name: "你", v: st.last ? st.last.you : 0, you: true },
-      { name: "归零者", v: st.last ? st.last.zero : 0 },
-      { name: "守望者", v: st.last ? st.last.watch : 0 },
-      { name: "商人", v: st.last ? st.last.merchant : 0 },
-      { name: "孩子", v: st.last ? st.last.child : 0 }
-    ];
     return `
-    <div class="scene">
-      <span class="scene-tag ${st.cum >= C5_THRESHOLD ? "is-calm" : ""}">${st.cum >= C5_THRESHOLD ? "MASS QUORUM // 已越过" : "MASS QUORUM // 收集中"}</span>
-      <svg viewBox="0 0 400 300" role="img" aria-label="宇宙质量总账">
-        <defs>
-          <linearGradient id="goldarc" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#f2c879"/>
-            <stop offset="100%" stop-color="#ff8a5c"/>
-          </linearGradient>
-          <radialGradient id="sing" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="#fff8e6"/>
-            <stop offset="45%" stop-color="#f2c879"/>
-            <stop offset="100%" stop-color="rgba(242,200,121,0)"/>
-          </radialGradient>
-        </defs>
-
-        <circle cx="200" cy="150" r="118" fill="none" stroke="rgba(242,200,121,.10)" stroke-width=".8" stroke-dasharray="2 7"/>
-        <circle cx="200" cy="150" r="${R}" fill="none" stroke="rgba(242,200,121,.12)" stroke-width="3"/>
-        <circle cx="200" cy="150" r="${R}" fill="none" stroke="url(#goldarc)" stroke-width="3.4"
-          stroke-linecap="round" stroke-dasharray="${(C * pct).toFixed(1)} ${C.toFixed(1)}"
-          transform="rotate(-90 200 150)"/>
-        ${pct >= 1 ? `<circle cx="200" cy="150" r="${R}" fill="none" stroke="rgba(255,138,92,.55)" stroke-width="9" opacity=".35"/>` : ""}
-
-        <circle cx="200" cy="150" r="52" fill="url(#sing)" opacity=".28" class="bigbtn"/>
-        <circle cx="200" cy="150" r="34" fill="rgba(6,10,16,.92)" stroke="rgba(242,200,121,.5)" stroke-width=".9"/>
-        <text x="200" y="146" text-anchor="middle" font-family="monospace" font-size="25" fill="#f2c879" letter-spacing="1">${st.cum}</text>
-        <text x="200" y="162" text-anchor="middle" font-family="monospace" font-size="8" fill="rgba(242,200,121,.55)" letter-spacing="2">/ ${C5_THRESHOLD}</text>
-
-        ${markers.map((m, i) => {
-          const a = -Math.PI / 2 + i * (Math.PI * 2 / 5);
-          const x = 200 + Math.cos(a) * 118;
-          const y = 150 + Math.sin(a) * 118;
-          const on = m.v > 0;
-          return `<g>
-            <circle cx="${x}" cy="${y}" r="${m.you ? 5 : 3.6}" fill="${on ? (m.you ? "#6fd9ff" : "#f2c879") : "rgba(126,145,165,.5)"}"/>
-            <circle cx="${x}" cy="${y}" r="${m.you ? 11 : 8}" fill="none" stroke="${on ? "rgba(242,200,121,.45)" : "rgba(126,145,165,.2)"}" stroke-width=".8"/>
-            <text x="${x}" y="${y + 19}" text-anchor="middle" font-family="monospace" font-size="7" letter-spacing="1" fill="${m.you ? "rgba(111,217,255,.85)" : "rgba(190,200,215,.6)"}">${m.name}</text>
-          </g>`;
-        }).join("")}
-      </svg>
+    <div class="scene scene--3d">
+      <span class="scene-tag ${pct >= 1 ? "is-calm" : ""}">${pct >= 1 ? "MASS QUORUM // 已越过" : "MASS QUORUM // 收集中"}</span>
+      <canvas data-holo="mass" tabindex="0" aria-label="三维质量环，可拖拽旋转，滚轮缩放"></canvas>
+      <span class="holo-hint">拖拽旋转 · 滚轮缩放</span>
       <div class="scene-caption">
         <span>宇宙质量总账 · <b>${pct >= 1 ? "临界值已越过" : "还差 " + Math.max(0, C5_THRESHOLD - st.cum)}</b></span>
         <span>第 ${st.round} / ${C5_ROUNDS} 轮</span>

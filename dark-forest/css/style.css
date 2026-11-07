@@ -260,6 +260,23 @@ body::before{
 }
 .scene-tag.is-calm{color:var(--teal);border-color:rgba(94,234,212,.3);background:rgba(6,30,28,.5)}
 
+/* interactive 3d hologram scenes */
+.scene--3d{display:block;min-height:330px;padding:0}
+.scene--3d canvas{
+  display:block;width:100%;height:330px;cursor:grab;touch-action:none;outline:none;
+}
+.scene--3d canvas.is-dragging{cursor:grabbing}
+.scene--3d canvas:focus-visible{outline:1px solid rgba(111,217,255,.55);outline-offset:-2px}
+.holo-hint{
+  position:absolute;right:16px;bottom:38px;z-index:2;pointer-events:none;
+  font-family:var(--mono);font-size:8px;letter-spacing:.16em;color:var(--faint);opacity:.6;
+}
+@media (max-width:600px){
+  .scene--3d{min-height:292px}
+  .scene--3d canvas{height:292px}
+  .holo-hint{font-size:7px;right:12px;bottom:36px}
+}
+
 /* radar */
 .radar-sweep{transform-origin:200px 150px;animation:sweep 4.5s linear infinite}
 @keyframes sweep{to{transform:rotate(360deg)}}
