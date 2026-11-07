@@ -8,7 +8,7 @@
 ![非商业同人](https://img.shields.io/badge/%E9%9D%9E%E5%95%86%E4%B8%9A%E5%90%8C%E4%BA%BA-%E4%B8%89%E4%BD%93-ff5d5d?style=flat-square)
 ![AI 生成](https://img.shields.io/badge/AI-generated-8b5cf6?style=flat-square)
 
-**[开始游戏 →](https://youshuo16.github.io/Games/play/dark-forest/)**
+**[开始游戏 →](https://youshuo16.github.io/Games/dark-forest/)**
 
 ![标题画面](screenshots/01-title.png)
 
