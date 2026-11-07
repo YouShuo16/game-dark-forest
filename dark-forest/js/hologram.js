@@ -19,7 +19,9 @@ const Hologram = (() => {
   const defaultCam = {
     battle: { yaw: -0.55, pitch: 0.28, dist: 4.3 },
     plans: { yaw: 0.55, pitch: 0.34, dist: 4.1 },
-    mass: { yaw: 0.35, pitch: 0.40, dist: 4.7 }
+    mass: { yaw: 0.35, pitch: 0.40, dist: 4.7 },
+    deterrence: { yaw: -0.55, pitch: 0.26, dist: 4.4 },
+    signal: { yaw: -0.4, pitch: 0.30, dist: 4.2 }
   };
 
   function project(p, cam, W, H) {
@@ -84,6 +86,17 @@ const Hologram = (() => {
       ctx.restore();
     }
     return q;
+  }
+
+  function text3(ctx, p, cam, W, H, text, color, font, align) {
+    const q = project(p, cam, W, H);
+    if (!q) return;
+    ctx.save();
+    ctx.font = font || "10px 'Microsoft YaHei', sans-serif";
+    ctx.fillStyle = `rgba(${color},.8)`;
+    ctx.textAlign = align || "left";
+    ctx.fillText(text, q.x, q.y);
+    ctx.restore();
   }
 
   function bezier(a, b, bulge, steps) {
@@ -323,10 +336,192 @@ const Hologram = (() => {
     }
   }
 
+  /* ---------------- chapter 2: deterrence console ---------------- */
+  function deterrence(ctx, st, cam, W, H, t) {
+    const threshold = st.threshold || 42;
+    const stable = st.D >= threshold;
+    const tint = stable ? C.cyan : C.red;
+    const glow = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.min(W, H) * 0.55);
+    glow.addColorStop(0, `rgba(${tint},.055)`);
+    glow.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, H);
+
+    const earth = [-0.9, -0.05, 0], er = 0.55;
+    const rings = [];
+    for (let lat = -45; lat <= 45; lat += 30) {
+      const la = (lat * Math.PI) / 180, pts = [];
+      for (let i = 0; i <= 36; i++) {
+        const lo = (i / 36) * TAU;
+        pts.push([earth[0] + Math.cos(la) * Math.cos(lo) * er, earth[1] + Math.sin(la) * er, earth[2] + Math.cos(la) * Math.sin(lo) * er]);
+      }
+      rings.push(pts);
+    }
+    for (let lon = 0; lon < 180; lon += 30) {
+      const lo = (lon * Math.PI) / 180, pts = [];
+      for (let i = 0; i <= 36; i++) {
+        const la = -Math.PI / 2 + (i / 36) * Math.PI;
+        pts.push([earth[0] + Math.cos(la) * Math.cos(lo) * er, earth[1] + Math.sin(la) * er, earth[2] + Math.cos(la) * Math.sin(lo) * er]);
+      }
+      rings.push(pts);
+    }
+    strokeRings(ctx, rings, cam, W, H, C.cyan, 0.16, 1);
+    text3(ctx, [earth[0], earth[1] - 0.78, earth[2]], cam, W, H, "太阳系", C.cyan, "10px 'Microsoft YaHei', sans-serif", "center");
+
+    const T = st.T || 0;
+    const fy = 0.08, startX = 1.5, step = 0.16;
+    ctx.setLineDash([2, 7]);
+    line(ctx, [1.8, fy, 0], [-0.35, fy, 0], cam, W, H, C.red, 0.14, 1);
+    ctx.setLineDash([]);
+    const ghost = T ? 0 : 3;
+    for (let i = 0; i < T + ghost; i++) {
+      const on = i < T;
+      const x = startX - i * step;
+      const a = [x, fy, 0], b = [x + 0.12, fy + 0.075, 0], c = [x + 0.12, fy - 0.075, 0];
+      line(ctx, a, b, cam, W, H, C.red, on ? 0.85 : 0.18, 1.5);
+      line(ctx, a, c, cam, W, H, C.red, on ? 0.85 : 0.18, 1.5);
+      node(ctx, a, cam, W, H, C.red, on ? 1.4 : 1, on ? 0.7 : 0.15);
+    }
+    if (!T) {
+      text3(ctx, [1.22, fy + 0.3, 0], cam, W, H, "FLEET OUT OF RANGE", C.red, "8px Consolas, monospace", "center");
+    } else {
+      const lead = startX - (T - 1) * step;
+      text3(ctx, [lead + 0.08, fy + 0.28, 0], cam, W, H, "三体舰队 " + T + " / 8", C.red, "10px 'Microsoft YaHei', sans-serif", "right");
+    }
+
+    const sw = [0.58, -0.15, 0.5];
+    line(ctx, [sw[0], -0.88, sw[2]], sw, cam, W, H, C.red, 0.25, 1);
+    ctx.setLineDash([1, 5]);
+    line(ctx, earth, sw, cam, W, H, C.cyan, 0.16, 1);
+    ctx.setLineDash([]);
+    for (const r of [0.26, 0.36, 0.46]) {
+      const pts = [];
+      for (let i = 0; i <= 40; i++) {
+        const a = (i / 40) * TAU;
+        pts.push([sw[0] + Math.cos(a) * r, sw[1], sw[2] + Math.sin(a) * r]);
+      }
+      strokeRings(ctx, [pts], cam, W, H, tint, r === 0.36 ? 0.4 : 0.18, 1);
+    }
+
+    const full = [], arc = [];
+    for (let i = 0; i <= 72; i++) {
+      const a = (i / 72) * TAU;
+      const p = [sw[0] + Math.cos(a) * 0.58, sw[1] + 0.02, sw[2] + Math.sin(a) * 0.58];
+      full.push(p);
+      if (i / 72 <= st.D / 100) arc.push(p);
+    }
+    strokeRings(ctx, [full], cam, W, H, tint, 0.12, 1);
+    if (arc.length > 1) strokeRings(ctx, [arc], cam, W, H, tint, 0.9, 2.2);
+    const ta = (threshold / 100) * TAU;
+    line(ctx, [sw[0] + Math.cos(ta) * 0.52, sw[1] + 0.02, sw[2] + Math.sin(ta) * 0.52],
+              [sw[0] + Math.cos(ta) * 0.63, sw[1] + 0.02, sw[2] + Math.sin(ta) * 0.63], cam, W, H, tint, 0.8, 1.5);
+
+    if (T) {
+      ctx.setLineDash([2, 6]);
+      line(ctx, sw, [startX - (T - 1) * step, fy, 0], cam, W, H, tint, 0.3, 1);
+      ctx.setLineDash([]);
+    }
+
+    if (st.phase === "confirm") {
+      const pulse = 0.55 + Math.sin(t * 5) * 0.2;
+      const pts = [];
+      for (let i = 0; i <= 48; i++) {
+        const a = (i / 48) * TAU;
+        pts.push([sw[0] + Math.cos(a) * 0.68, sw[1], sw[2] + Math.sin(a) * 0.68]);
+      }
+      strokeRings(ctx, [pts], cam, W, H, C.white, pulse, 2);
+    }
+
+    node(ctx, sw, cam, W, H, C.red, 7, 1);
+    text3(ctx, [sw[0], sw[1] - 0.76, sw[2]], cam, W, H, "引力波开关", C.red, "10px 'Microsoft YaHei', sans-serif", "center");
+  }
+
+  /* ---------------- chapter 3: signal sphere ---------------- */
+  function signalScene(ctx, st, cam, W, H, t) {
+    const post = st.post == null ? 0.5 : st.post;
+    const tint = post >= 0.5 ? C.cyan : C.red;
+    const glow = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.min(W, H) * 0.52);
+    glow.addColorStop(0, `rgba(${tint},.05)`);
+    glow.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, H);
+
+    const rings = [];
+    for (let lat = -60; lat <= 60; lat += 30) {
+      const la = (lat * Math.PI) / 180, pts = [];
+      for (let i = 0; i <= 48; i++) {
+        const lo = (i / 48) * TAU;
+        pts.push([Math.cos(la) * Math.cos(lo), Math.sin(la), Math.cos(la) * Math.sin(lo)]);
+      }
+      rings.push(pts);
+    }
+    for (let lon = 0; lon < 180; lon += 30) {
+      const lo = (lon * Math.PI) / 180, pts = [];
+      for (let i = 0; i <= 48; i++) {
+        const la = -Math.PI / 2 + (i / 48) * Math.PI;
+        pts.push([Math.cos(la) * Math.cos(lo), Math.sin(la), Math.cos(la) * Math.sin(lo)]);
+      }
+      rings.push(pts);
+    }
+    strokeRings(ctx, rings, cam, W, H, C.cyan, 0.09, 1);
+
+    const scan = [];
+    for (let i = 0; i <= 72; i++) {
+      const a = (i / 72) * TAU + t * 0.35;
+      scan.push([Math.cos(a) * 1.12, Math.sin(a * 2 + t * 0.2) * 0.08, Math.sin(a) * 1.12]);
+    }
+    strokeRings(ctx, [scan], cam, W, H, C.cyan, 0.22, 1);
+
+    const srcPos = j => {
+      const az = -0.9 + j * 1.15;
+      const el = 0.42 - (j % 2) * 0.55;
+      return [Math.cos(el) * Math.cos(az) * 1.1, Math.sin(el) * 1.1, Math.cos(el) * Math.sin(az) * 1.1];
+    };
+    for (let j = 0; j < st.idx; j++) node(ctx, srcPos(j), cam, W, H, C.cyan, 1.6, 0.22);
+
+    const src = srcPos(st.idx);
+    const station = [0, -0.12, 0];
+    const beamColor = st.last ? (st.last.good ? C.cyan : C.red) : C.gold;
+    const { pts, mid } = bezier(src, station, 0.4, 28);
+    strokeRings(ctx, [pts], cam, W, H, beamColor, 0.55, 1.4);
+    const u = (t * 0.65) % 1;
+    node(ctx, pointOn(src, station, mid, u), cam, W, H, beamColor, 2, 0.9);
+    node(ctx, src, cam, W, H, beamColor, 4, 0.95, st.source || "信号源", beamColor);
+
+    node(ctx, station, cam, W, H, C.white, 3.2, 0.85, "监听站", C.white);
+
+    const R = 0.38, full = [], arc = [];
+    for (let i = 0; i <= 72; i++) {
+      const a = (i / 72) * TAU;
+      const p = [station[0] + Math.cos(a) * R, station[1] + 0.02, station[2] + Math.sin(a) * R];
+      full.push(p);
+      if (i / 72 <= post) arc.push(p);
+    }
+    strokeRings(ctx, [full], cam, W, H, C.white, 0.1, 1);
+    if (arc.length > 1) strokeRings(ctx, [arc], cam, W, H, tint, 0.9, 2.2);
+    line(ctx, [station[0] + Math.cos(Math.PI) * 0.34, station[1] + 0.02, station[2] + Math.sin(Math.PI) * 0.34],
+              [station[0] + Math.cos(Math.PI) * 0.42, station[1] + 0.02, station[2] + Math.sin(Math.PI) * 0.42],
+              cam, W, H, C.white, 0.45, 1);
+
+    text3(ctx, [station[0] + 0.62, station[1] - 0.5, station[2]], cam, W, H,
+      "P(善意) " + Math.round(post * 100) + "%", tint, "9px Consolas, monospace", "center");
+
+    if (st.title) {
+      ctx.save();
+      ctx.font = "600 18px 'Noto Serif SC', 'Songti SC', serif";
+      ctx.fillStyle = `rgba(${C.white},.85)`;
+      ctx.textAlign = "center";
+      ctx.fillText(st.title, W / 2, 42);
+      ctx.restore();
+    }
+  }
+
   function draw(kind, st, ctx, W, H, cam, t) {
     if (kind === "battle") battle(ctx, st, cam, W, H, t);
     else if (kind === "plans") plans(ctx, st, cam, W, H, t);
     else if (kind === "mass") mass(ctx, st, cam, W, H, t);
+    else if (kind === "deterrence") deterrence(ctx, st, cam, W, H, t);
+    else if (kind === "signal") signalScene(ctx, st, cam, W, H, t);
   }
 
   function mount(canvas) {

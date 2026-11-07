@@ -470,7 +470,15 @@ const C2 = {
 
   threshold() { return 42 + (this.st.turn - 1) * 6; },
 
-  draw() { App.set(this.html()); },
+  draw() {
+    if (typeof Hologram !== "undefined") {
+      Hologram.setState("deterrence", {
+        turn: this.st.turn, T: this.st.T, D: this.st.D, S: this.st.S,
+        threshold: this.threshold(), last: this.st.last, phase: this.st.phase
+      });
+    }
+    App.set(this.html());
+  },
 
   html() {
     if (this.phase === "brief") {
@@ -541,48 +549,11 @@ const C2 = {
 
   scene(th) {
     const st = this.st;
-    const fleet = Array.from({ length: 8 }, (_, i) => {
-      if (i >= st.T) return "";
-      const x = 372 - i * 14;
-      return `<g>
-        <path d="M${x} 118 l-9 16 l18 0 z" fill="#ff5d5d"/>
-        <path d="M${x} 118 l-9 16 l18 0 z" fill="none" stroke="rgba(255,93,93,.6)" stroke-width="3"/>
-      </g>`;
-    }).join("");
-
     return `
-    <div class="scene">
+    <div class="scene scene--3d">
       <span class="scene-tag ${st.D >= th ? "is-calm" : ""}">${st.D >= th ? "DETERRENCE // 稳定" : "WARNING // 威慑不足"}</span>
-      <svg viewBox="0 0 400 300" role="img" aria-label="威慑控制室">
-        <defs>
-          <radialGradient id="earth2" cx="38%" cy="34%" r="70%">
-            <stop offset="0%" stop-color="#8fd6ff"/><stop offset="55%" stop-color="#2570a8"/><stop offset="100%" stop-color="#07131f"/>
-          </radialGradient>
-          <radialGradient id="btn2" cx="40%" cy="35%" r="65%">
-            <stop offset="0%" stop-color="#ff9b9b"/><stop offset="55%" stop-color="#d92b2b"/><stop offset="100%" stop-color="#4a0808"/>
-          </radialGradient>
-          <filter id="glow2"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-        </defs>
-
-        <circle cx="64" cy="150" r="31" fill="url(#earth2)"/>
-        <circle cx="64" cy="150" r="43" fill="none" stroke="rgba(111,217,255,.22)" stroke-width=".8"/>
-        <text x="64" y="206" text-anchor="middle" font-family="monospace" font-size="8" letter-spacing="2" fill="rgba(125,145,165,.7)">太阳系</text>
-
-        <g opacity=".9">${fleet}</g>
-        <line x1="378" y1="126" x2="244" y2="126" stroke="rgba(255,93,93,.18)" stroke-width=".7" stroke-dasharray="1 6"/>
-        ${st.T === 0 ? `<text x="378" y="118" text-anchor="end" font-family="monospace" font-size="7" letter-spacing="1.5" fill="rgba(125,145,165,.5)">FLEET OUT OF RANGE</text>` : ""}
-
-        <g>
-          <rect x="176" y="76" width="50" height="148" rx="4" fill="rgba(12,20,30,.85)" stroke="rgba(126,170,210,.25)"/>
-          <circle cx="201" cy="92" r="3" fill="${st.D >= th ? "#5eead4" : "#ff5d5d"}"/>
-          <circle cx="201" cy="150" r="19" fill="url(#btn2)" filter="url(#glow2)" class="bigbtn"/>
-          <circle cx="201" cy="150" r="29" fill="none" stroke="rgba(255,93,93,.35)" stroke-width=".8" stroke-dasharray="2 5"/>
-          <text x="201" y="184" text-anchor="middle" font-family="monospace" font-size="6.5" letter-spacing="1" fill="rgba(255,140,140,.75)">GRAVITY</text>
-          <text x="201" y="194" text-anchor="middle" font-family="monospace" font-size="6.5" letter-spacing="1" fill="rgba(255,140,140,.75)">BROADCAST</text>
-          <path d="M150 150 h22" stroke="rgba(255,93,93,.3)" stroke-width=".8"/>
-          <path d="M230 150 h22" stroke="rgba(255,93,93,.3)" stroke-width=".8"/>
-        </g>
-      </svg>
+      <canvas data-holo="deterrence" tabindex="0" aria-label="三维威慑控制台，可拖拽旋转，滚轮缩放"></canvas>
+      <span class="holo-hint">拖拽旋转 · 滚轮缩放</span>
       <div class="scene-caption">
         <span>引力波发射阵列 · <b>${st.D >= th ? "在线" : "被试探中"}</b></span>
         <span>三体舰队推进 ${st.T} / 8</span>
@@ -982,7 +953,28 @@ const C3 = {
     this.draw();
   },
 
-  draw() { App.set(this.html()); },
+  draw() {
+    if (typeof Hologram !== "undefined") {
+      Hologram.setState("signal", {
+        idx: this.st.idx, post: this.st.post, last: this.st.last,
+        title: this.st.obs.length ? this.obsTitle() : "",
+        source: this.enc().name
+      });
+    }
+    App.set(this.html());
+  },
+
+  scene3D() {
+    const st = this.st, e = this.enc();
+    const good = Math.round(st.post * 100);
+    return `
+    <div class="scene scene--3d">
+      <span class="scene-tag ${good >= 50 ? "is-calm" : ""}"><span>SIGNAL ${String(st.idx + 1).padStart(2, "0")}</span><span class="tag-region"> // ${e.region}</span></span>
+      <canvas data-holo="signal" tabindex="0" aria-label="三维信号球，可拖拽旋转，滚轮缩放"></canvas>
+      <span class="holo-hint">拖拽旋转 · 滚轮缩放</span>
+      <div class="scene-caption"><span>监听站 · <b>被动接收</b></span><span>暴露度 ${st.exposure} / 100</span></div>
+    </div>`;
+  },
 
   enc() { return C3_ENCOUNTERS[this.st.idx]; },
 
@@ -1033,17 +1025,7 @@ const C3 = {
       ${UI.hud(2, "贝叶斯信号")}
       <div class="stage">
         <section class="stage-main">
-          <div class="scene">
-            <span class="scene-tag ${good >= 50 ? "is-calm" : ""}">SIGNAL ${String(st.idx + 1).padStart(2, "0")} // ${e.region}</span>
-            <div style="width:100%;padding:26px 0 10px">
-              ${UI.sceneWave({ strength: 0.35 + good / 200 })}
-              <div style="text-align:center;margin-top:6px">
-                <div class="mono" style="font-size:9px;letter-spacing:.3em;color:var(--faint)">${e.name} · 信号解析</div>
-                <div class="serif" style="font-size:22px;letter-spacing:.12em;margin-top:8px">${this.obsTitle()}</div>
-              </div>
-            </div>
-            <div class="scene-caption"><span>监听站 · <b>被动接收</b></span><span>暴露度 ${st.exposure} / 100</span></div>
-          </div>
+          ${this.scene3D()}
 
           <div class="panel">
             <div class="panel-head">

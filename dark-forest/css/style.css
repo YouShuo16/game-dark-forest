@@ -275,6 +275,7 @@ body::before{
   .scene--3d{min-height:292px}
   .scene--3d canvas{height:292px}
   .holo-hint{font-size:7px;right:12px;bottom:36px}
+  .tag-region{display:none}
 }
 
 /* radar */
