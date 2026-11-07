@@ -3,18 +3,141 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
-<meta http-equiv="refresh" content="0; url=dark-forest/index.html">
-<link rel="canonical" href="dark-forest/">
-<title>黑暗森林 · 五个博弈</title>
+<title>游戏库 · game</title>
+<meta name="description" content="一些自己做的小游戏。每个游戏一个文件夹，点开就能玩。">
 <style>
-  html,body{margin:0;height:100%;background:#04060b;color:#7f93a8}
-  body{display:grid;place-items:center;font-family:"Microsoft YaHei",system-ui,sans-serif}
-  a{color:#6fd9ff;text-decoration:none;border-bottom:1px solid rgba(111,217,255,.35);padding-bottom:2px}
-  p{font-size:13px;letter-spacing:.06em}
+  :root{
+    --bg:#04060b; --ink:#e8f1fa; --dim:#8fa3b8; --faint:#5f7286;
+    --line:rgba(126,170,210,.18); --line2:rgba(126,170,210,.35);
+    --cyan:#6fd9ff; --gold:#f2c879; --red:#ff9a9a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%}
+  body{
+    background:radial-gradient(120% 90% at 50% -10%, #0c1928 0%, #04060b 55%, #02040a 100%);
+    color:var(--ink);font-family:"Microsoft YaHei",system-ui,sans-serif;overflow-x:hidden;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;opacity:.7;
+    background:
+      radial-gradient(1.2px 1.2px at 12% 16%, rgba(255,255,255,.8), transparent 60%),
+      radial-gradient(1px 1px at 78% 11%, rgba(207,233,255,.8), transparent 60%),
+      radial-gradient(1px 1px at 32% 72%, rgba(255,255,255,.6), transparent 60%),
+      radial-gradient(1.4px 1.4px at 88% 58%, rgba(159,214,255,.7), transparent 60%),
+      radial-gradient(1px 1px at 6% 84%, rgba(255,255,255,.55), transparent 60%),
+      radial-gradient(1px 1px at 56% 34%, rgba(255,255,255,.5), transparent 60%),
+      radial-gradient(1px 1px at 68% 82%, rgba(255,255,255,.45), transparent 60%),
+      radial-gradient(1px 1px at 22% 42%, rgba(255,255,255,.4), transparent 60%);
+  }
+  .wrap{width:min(960px,calc(100% - 48px));margin:0 auto;padding:76px 0 40px;position:relative}
+  .eyebrow{
+    font-family:Consolas,"Courier New",monospace;font-size:10px;letter-spacing:.34em;
+    color:var(--cyan);opacity:.72;margin:0;
+  }
+  h1{
+    font-family:"Songti SC","Noto Serif SC",serif;font-weight:500;
+    font-size:clamp(46px,7vw,84px);letter-spacing:.14em;line-height:1.1;margin:18px 0 14px;
+    color:#e6f7ff;
+  }
+  h1 span{color:#ff9a9a}
+  .lead{
+    font-family:"Songti SC","Noto Serif SC",serif;font-size:16px;line-height:2;
+    letter-spacing:.02em;color:#c9d6e4;margin:0 0 44px;
+  }
+  .grid{display:grid;gap:24px;max-width:900px;margin:0 auto}
+  .card{
+    display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);
+    border:1px solid var(--line);background:linear-gradient(180deg,rgba(11,18,29,.9),rgba(6,10,17,.94));
+    overflow:hidden;transition:border-color .25s,transform .25s,box-shadow .25s;
+  }
+  .card:hover{
+    border-color:rgba(111,217,255,.45);transform:translateY(-3px);
+    box-shadow:0 34px 90px -44px rgba(111,217,255,.45);
+  }
+  .cover{
+    display:block;position:relative;min-height:300px;overflow:hidden;
+    border-right:1px solid var(--line);background:#060b13;
+  }
+  .cover img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s ease}
+  .card:hover .cover img{transform:scale(1.03)}
+  .body{padding:28px 30px;display:flex;flex-direction:column;gap:10px;min-width:0}
+  .tag{font-family:Consolas,"Courier New",monospace;font-size:9px;letter-spacing:.24em;color:var(--gold)}
+  h2{
+    font-family:"Songti SC","Noto Serif SC",serif;font-weight:500;
+    font-size:26px;letter-spacing:.08em;line-height:1.4;margin:2px 0 0;
+  }
+  .desc{font-size:13.5px;line-height:1.95;color:var(--dim);margin:0;flex:1}
+  .meta{
+    display:flex;flex-wrap:wrap;gap:14px;margin-top:4px;padding-top:12px;
+    border-top:1px solid var(--line);
+    font-family:Consolas,"Courier New",monospace;font-size:9px;letter-spacing:.12em;color:var(--faint);
+  }
+  .actions{display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin-top:auto;padding-top:10px}
+  .play{
+    display:inline-flex;align-items:center;gap:8px;padding:10px 16px;
+    border:1px solid rgba(111,217,255,.5);background:rgba(31,74,104,.35);
+    color:#eaf9ff;text-decoration:none;font-family:Consolas,"Courier New",monospace;
+    font-size:10px;letter-spacing:.18em;transition:background .2s,border-color .2s;
+  }
+  .play:hover{background:rgba(40,100,140,.55);border-color:var(--cyan)}
+  .play span{transition:transform .2s}
+  .play:hover span{transform:translateX(3px)}
+  .sub{
+    color:var(--dim);font-size:11px;text-decoration:none;letter-spacing:.04em;
+    border-bottom:1px solid rgba(126,170,210,.25);padding-bottom:2px;transition:color .2s,border-color .2s;
+  }
+  .sub:hover{color:var(--ink);border-color:var(--line2)}
+  footer{
+    max-width:900px;margin:44px auto 0;padding-top:18px;border-top:1px solid var(--line);
+    display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;
+    font-family:Consolas,"Courier New",monospace;font-size:9px;letter-spacing:.16em;color:var(--faint);
+  }
+  footer a{color:var(--faint);text-decoration:none;transition:color .2s}
+  footer a:hover{color:var(--cyan)}
+  @media(max-width:760px){
+    .wrap{padding-top:52px}
+    h1{font-size:clamp(42px,11vw,64px)}
+    .lead{margin-bottom:32px;font-size:15px}
+    .card{grid-template-columns:1fr}
+    .cover{min-height:0;aspect-ratio:16/9;border-right:0;border-bottom:1px solid var(--line)}
+    .body{padding:22px 22px 24px}
+    h2{font-size:23px}
+    footer{margin-top:34px}
+  }
+  @media(max-width:420px){
+    .wrap{width:calc(100% - 32px);padding-top:42px}
+    .actions{gap:14px}
+  }
 </style>
 </head>
 <body>
-<p>正在进入 <a href="dark-forest/index.html">黑暗森林 · 五个博弈</a>…</p>
+<main class="wrap">
+  <p class="eyebrow">GAMES / 游戏库</p>
+  <h1>游戏<span>库</span></h1>
+  <p class="lead">一些自己做的小游戏。<br>每个游戏一个文件夹，点开就能玩。</p>
+
+  <section class="grid" aria-label="游戏列表">
+    <article class="card">
+      <a class="cover" href="dark-forest/index.html" aria-label="进入黑暗森林 · 五个博弈">
+        <img src="dark-forest/screenshots/01-title.png" alt="黑暗森林 · 五个博弈">
+      </a>
+      <div class="body">
+        <span class="tag">博弈论 · 互动叙事</span>
+        <h2>黑暗森林 · 五个博弈</h2>
+        <p class="desc">以《三体》为背景的博弈论互动叙事游戏。五个章节，五场选择。读过原著会看见另一层，没读过也能玩懂。</p>
+        <div class="meta"><span>5 个章节</span><span>可拖拽 3D</span><span>约 25 分钟</span></div>
+        <div class="actions">
+          <a class="play" href="dark-forest/index.html">开始游戏 <span>→</span></a>
+          <a class="sub" href="https://github.com/YouShuo16/game/blob/main/dark-forest/README.md">项目说明</a>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <footer>
+    <span>AI 生成 · 非商业同人</span>
+    <a href="https://github.com/YouShuo16/game">GitHub ↗</a>
+  </footer>
+</main>
 </body>
 </html>
